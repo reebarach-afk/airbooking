@@ -1,0 +1,24 @@
+# Backend + Redis + Celery worker. Run the React app locally with `npm run dev` (see README).
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  backend:
+    build: ./backend
+    env_file: ./backend/.env.example
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      DJANGO_ALLOWED_HOSTS: "*"
+    volumes: ["./backend:/app"]
+    ports: ["8000:8000"]
+    depends_on: [redis]
+
+  worker:
+    build: ./backend
+    command: celery -A config worker -l info
+    env_file: ./backend/.env.example
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+    volumes: ["./backend:/app"]
+    depends_on: [redis, backend]
